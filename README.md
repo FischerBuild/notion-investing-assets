@@ -1,49 +1,56 @@
 # Notion Investing — Assets
 
-Stable, publicly-accessible image URLs for the [Investing Notion workspace](https://www.notion.so/354fefc66bb980038c60da4cb32e6594). Used by the cloud routine `trig_01PQ4EV72HgqLQ5PsefhoScT` (YC P26 Daily Monitor) and by `update_page` icon writes from local sessions.
+Stable, publicly-accessible image URLs for the [Investing Notion workspace](https://www.notion.so/354fefc66bb980038c60da4cb32e6594). Used by cloud routines and `update_page` icon writes from local sessions.
+
+## Structure
+
+```
+notion-investing-assets/
+├── p26/            # YC P26 batch — 167 startup logos (initial, sourced from Airtable)
+├── w26/            # YC W26 batch — older batch, populated as needed
+├── portfolio/      # Angel investments outside YC (logos scraped from company websites)
+├── funds/          # Fund logos (Seedcamp, etc.) — scraped from fund websites
+└── advisory/       # People / org logos for Advisory tasks
+```
+
+Empty subdirectories contain `.gitkeep` so the structure is visible until logos arrive.
 
 ## URL pattern
 
-Each file is referenceable as a Notion page icon via:
-
 ```
-https://raw.githubusercontent.com/FischerBuild/notion-investing-assets/main/<slug>.png
+https://raw.githubusercontent.com/FischerBuild/notion-investing-assets/main/<category>/<slug>.png
 ```
-
-## Slug naming
-
-`<startup_slug>.png` is derived from the canonical Airtable `Startup Name`:
-- Lowercase the name.
-- Replace any non-alphanumeric character with `_`.
-- Collapse runs of `_` into a single `_`.
-- Trim leading/trailing `_`.
 
 Examples:
-- `Apollo Atomics` → `apollo_atomics.png`
-- `Arlo Industries` → `arlo_industries.png`
-- `General Instinct` → `general_instinct.png`
-- `markup.one` → `markup_one.png`
-- `YC (P26) Startup` → `yc_p26_startup.png`
-- `9 Mothers` → `9_mothers.png`
+- `https://raw.githubusercontent.com/FischerBuild/notion-investing-assets/main/p26/apollo_atomics.png`
+- `https://raw.githubusercontent.com/FischerBuild/notion-investing-assets/main/portfolio/<slug>.png`
+- `https://raw.githubusercontent.com/FischerBuild/notion-investing-assets/main/funds/seedcamp.png`
 
-## Coverage
+## Slug rules
 
-Initial commit covers all 167 P26 batch startups that had a Logo attachment in Airtable as of 2026-05-10. The `_mapping.tsv` file records the canonical `name → slug` mapping the Airtable startup table → this repo.
+`<slug>` is derived from the canonical entity name:
+- Lowercase
+- Replace any non-alphanumeric character with `_`
+- Collapse runs of `_` into a single `_`
+- Trim leading/trailing `_`
 
-## Adding a new startup
+Examples: `Apollo Atomics → apollo_atomics`, `markup.one → markup_one`, `9 Mothers → 9_mothers`, `YC (P26) Startup → yc_p26_startup`.
 
-When the daily monitor surfaces a new startup whose slug isn't in this repo:
+## Sources by category
 
-1. Download the logo from Airtable (Startups table, `Logo` attachment field).
-2. Convert to PNG: `sips -s format png input.jpg --out output.png`.
-3. Slugify the startup name (rules above) → `<slug>.png`.
-4. Commit and push.
+| Category | Source for new logos |
+|----------|----------------------|
+| **p26**, **w26**, future YC batches | Airtable Startups table → `Logo` attachment field. Daily monitor routine references the URL via slug. |
+| **portfolio** | Scraped from the company's website on add. Fallback chain: `<link rel="apple-touch-icon">` → `<link rel="icon" sizes="...">` → `<meta property="og:image">` → `/favicon.ico`. |
+| **funds**, **advisory** | Same scraping flow as portfolio, against the entity's homepage. |
 
-A future iteration of the `/sync-pipeline-logos` skill will automate this via `gh` CLI when it detects a routine-created Pipeline row whose corresponding `<slug>.png` is missing from the repo.
+## Adding a new logo
+
+When the daily monitor (or another local skill) detects a Notion row whose icon URL would 404 against this repo, the corresponding logo is fetched from the source above, slugified, and committed. See `.claude/skills/sync-pipeline-logos/SKILL.md` and (forthcoming) `.claude/skills/sync-portfolio-logos/SKILL.md` for the automation details.
 
 ## Why GitHub raw and not Notion-hosted?
 
-Notion's API `icon` parameter only accepts emoji or external URLs. Notion-hosted file URLs (uploaded via UI) are scoped to workspace permissions and not publicly resolvable, so they can't be used as icon sources by the cloud routine. GitHub raw URLs are anonymously accessible, served via CDN, and stable indefinitely — perfect for icon URLs.
+Notion's API `icon` parameter only accepts emoji or external URLs. Notion-hosted file URLs (uploaded via UI) are workspace-permissioned and not publicly resolvable, so the cloud routine can't use them. GitHub raw URLs are anonymously accessible, served via CDN, and stable indefinitely. Notion fetches and caches icon images on first display so the URL resolves quickly thereafter.
 
 ## Privacy
 
